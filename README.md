@@ -6,10 +6,10 @@
 ## 📁 Structure du projet
 
 ```
-tp-jenkins/
+jenkins_project/
 ├── pom.xml                          ← Configuration Maven complète
 ├── checkstyle.xml                   ← Règles de style de code
-├── Jenkinsfile                      ← Pipeline CI complète
+├── Jenkinsfile                      ← Pipeline CI complète (Windows)
 ├── README.md                        ← Ce fichier
 └── src/
     ├── main/java/fr/epsi/
@@ -36,8 +36,8 @@ tp-jenkins/
 
 ```bash
 # Cloner le projet
-git clone https://github.com/VOTRE_USERNAME/tp-jenkins.git
-cd tp-jenkins
+git clone https://github.com/5h1ro0o/jenkins_project.git
+cd jenkins_project
 
 # Tests unitaires uniquement
 mvn clean test
