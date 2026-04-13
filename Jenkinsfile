@@ -167,7 +167,7 @@ Consulter les logs : ${env.BUILD_URL}console
             emailext(
                 subject: "FIXED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body:    "Le build est de nouveau stable : ${env.BUILD_URL}",
-                to:      'ton.adresse@gmail.com'
+                to:      'shirooooooo123456789@gmail.com'
             )
         }
 
