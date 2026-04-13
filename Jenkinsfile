@@ -153,7 +153,7 @@ Le build a echoue.
 
 Projet  : ${env.JOB_NAME}
 Build   : #${env.BUILD_NUMBER}
-Branche : ${env.GIT_RANCH}
+Branche : ${env.GIT_BRANCH}
 URL     : ${env.BUILD_URL}
 
 Consulter les logs : ${env.BUILD_URL}console

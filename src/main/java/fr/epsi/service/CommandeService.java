@@ -21,7 +21,7 @@ public class CommandeService {
         if (panier == null || panier.estVide()) {
             throw new IllegalArgumentException("Panier vide ou null");
         }
-        double total = 0;
+        double total = 0
         for (Map.Entry<Article, Integer> entry : panier.getArticles().entrySet()) {
             total += entry.getKey().getPrix() * entry.getValue();
         }
