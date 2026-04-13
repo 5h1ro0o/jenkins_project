@@ -1,38 +1,18 @@
 /**
  * Jenkinsfile – Pipeline CI complète
  * Projet : Boutique en ligne – ICDE848
- *
- * Ce fichier doit être placé à la RACINE du dépôt Git.
- * Jenkins le détecte automatiquement lors de la création du job Pipeline.
- *
- * Stages :
- *   1. Checkout       → récupère le code depuis Git
- *   2. Build          → compile le code source
- *   3. Tests unitaires → lance *Test.java via Surefire
- *   4. Tests intégration → lance *IT.java via Failsafe
- *   5. Couverture     → génère le rapport JaCoCo
- *   6. Qualité        → Checkstyle + PMD + CPD + SpotBugs
- *   7. Archive        → sauvegarde le JAR dans Jenkins
- *
- * Post :
- *   - failure → email à l'équipe
- *   - fixed   → email quand le build repasse au vert
+ * Adapté Windows (bat au lieu de sh)
  */
 
 pipeline {
 
-    // Exécuter sur n'importe quel agent disponible
     agent any
 
-    // Outils configurés dans Global Tool Configuration
     tools {
-        maven 'Maven3'    // Nom exact défini dans Jenkins
-        jdk   'JDK17'     // Nom exact défini dans Jenkins
+        maven 'Maven3'
+        jdk   'JDK17'
     }
 
-    // ─────────────────────────────────────────────────
-    // PARAMÈTRES (optionnel – pour TP4)
-    // ─────────────────────────────────────────────────
     parameters {
         string(
             name:         'BRANCH',
@@ -51,12 +31,9 @@ pipeline {
         )
     }
 
-    // ─────────────────────────────────────────────────
-    // STAGES
-    // ─────────────────────────────────────────────────
     stages {
 
-        // ── Stage 1 : Récupérer le code ──────────────
+        // ── Stage 1 : Checkout ────────────────────────
         stage('Checkout') {
             steps {
                 checkout scm
@@ -65,18 +42,16 @@ pipeline {
             }
         }
 
-        // ── Stage 2 : Compiler ───────────────────────
+        // ── Stage 2 : Build ───────────────────────────
         stage('Build') {
             steps {
                 bat 'mvn clean compile -B'
-                // -B = batch mode (pas de couleurs, logs Jenkins-friendly)
             }
         }
 
         // ── Stage 3 : Tests unitaires ─────────────────
         stage('Tests unitaires') {
             when {
-                // Sauter si le paramètre SKIP_TESTS est activé
                 not { expression { return params.SKIP_TESTS } }
             }
             steps {
@@ -84,7 +59,6 @@ pipeline {
             }
             post {
                 always {
-                    // Publier les résultats dans Jenkins (graphique de tendance)
                     junit '**/target/surefire-reports/*.xml'
                 }
                 failure {
@@ -93,8 +67,8 @@ pipeline {
             }
         }
 
-        // ── Stage 4 : Tests d'intégration ────────────
-        stage('Tests intégration') {
+        // ── Stage 4 : Tests intégration ───────────────
+        stage('Tests integration') {
             when {
                 not { expression { return params.SKIP_TESTS } }
             }
@@ -108,7 +82,7 @@ pipeline {
             }
         }
 
-        // ── Stage 5 : Couverture de code ─────────────
+        // ── Stage 5 : Couverture JaCoCo ───────────────
         stage('Couverture JaCoCo') {
             steps {
                 bat 'mvn jacoco:report -B'
@@ -116,17 +90,17 @@ pipeline {
             post {
                 always {
                     jacoco(
-                        execPattern:   '**/target/jacoco.exec',
-                        classPattern:  '**/target/classes',
-                        sourcePattern: '**/src/main/java',
+                        execPattern:        '**/target/jacoco.exec',
+                        classPattern:       '**/target/classes',
+                        sourcePattern:      '**/src/main/java',
                         minimumLineCoverage: '70'
                     )
                 }
             }
         }
 
-        // ── Stage 6 : Analyse qualité ─────────────────
-        stage('Qualité') {
+        // ── Stage 6 : Qualité ─────────────────────────
+        stage('Qualite') {
             steps {
                 bat 'mvn checkstyle:checkstyle pmd:pmd pmd:cpd spotbugs:spotbugs -B'
             }
@@ -140,7 +114,6 @@ pipeline {
                             cpd(pattern:        '**/cpd.xml'),
                             spotBugs(pattern:   '**/spotbugsXml.xml')
                         ],
-                        // Rendre le build UNSTABLE si > 10 avertissements
                         qualityGates: [[
                             threshold: 10,
                             type: 'TOTAL',
@@ -151,63 +124,32 @@ pipeline {
             }
         }
 
-        // ── Stage 7 : Archiver le JAR ─────────────────
+        // ── Stage 7 : Archive ─────────────────────────
         stage('Archive') {
             steps {
                 archiveArtifacts(
-                    artifacts:   '**/target/*.jar',
-                    fingerprint: true,
+                    artifacts:         '**/target/*.jar',
+                    fingerprint:       true,
                     allowEmptyArchive: false
                 )
-                echo "Artefact archivé avec succès"
+                echo "Artefact archive avec succes"
             }
         }
-
-        // ── Stage 8 : Validation manuelle avant PROD ──
-        // (Décommenter pour TP4 – Input step)
-        /*
-        stage('Validation PROD') {
-            when { expression { return params.ENVIRONMENT == 'prod' } }
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    input(
-                        message:   "Déployer en PRODUCTION ?",
-                        ok:        "Oui, déployer",
-                        submitter: "admin,tech-lead"
-                    )
-                }
-            }
-        }
-        */
-
-        // ── Stage 9 : Déploiement ─────────────────────
-        // (Décommenter et adapter à votre contexte)
-        /*
-        stage('Deploy') {
-            steps {
-                sh "./deploy.sh ${params.ENVIRONMENT}"
-            }
-        }
-        */
 
     } // fin stages
 
-    // ─────────────────────────────────────────────────
-    // POST — Actions après tous les stages
-    // ─────────────────────────────────────────────────
+    // ── POST ──────────────────────────────────────────
     post {
 
-        // Toujours exécuté (succès ou échec)
         always {
-            echo "Pipeline terminée — statut : ${currentBuild.currentResult}"
+            echo "Pipeline terminee -- statut : ${currentBuild.currentResult}"
         }
 
-        // Seulement en cas d'échec
         failure {
             emailext(
-                subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-Le build a échoué.
+Le build a echoue.
 
 Projet  : ${env.JOB_NAME}
 Build   : #${env.BUILD_NUMBER}
@@ -216,17 +158,16 @@ URL     : ${env.BUILD_URL}
 
 Consulter les logs : ${env.BUILD_URL}console
                 """,
-                to:          'equipe-dev@monentreprise.fr',
-                attachLog:   true
+                to:        'ton.adresse@gmail.com',
+                attachLog: true
             )
         }
 
-        // Seulement quand le build repasse de FAILURE à SUCCESS
         fixed {
             emailext(
-                subject: "✅ FIXED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "FIXED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body:    "Le build est de nouveau stable : ${env.BUILD_URL}",
-                to:      'equipe-dev@monentreprise.fr'
+                to:      'ton.adresse@gmail.com'
             )
         }
 
