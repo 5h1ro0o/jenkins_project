@@ -158,7 +158,7 @@ URL     : ${env.BUILD_URL}
 
 Consulter les logs : ${env.BUILD_URL}console
                 """,
-                to:        'ton.adresse@gmail.com',
+                to:        'shirooooooo123456789@gmail.com',
                 attachLog: true
             )
         }
