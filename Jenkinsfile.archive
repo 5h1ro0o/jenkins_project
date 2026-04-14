@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    tools { maven 'Maven3'; jdk 'JDK17' }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Package') {
+            steps {
+                bat 'mvn clean package -DskipTests -B'
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts(
+                    artifacts:         '**/target/*.jar',
+                    fingerprint:       true,
+                    allowEmptyArchive: false
+                )
+                echo 'JAR archive avec succes'
+            }
+        }
+
+    }
+
+    post {
+        success {
+            emailext(
+                subject: "SUCCESS: Pipeline complete #${env.BUILD_NUMBER}",
+                body: "Chaine complete. JAR archive. URL : ${env.BUILD_URL}",
+                to: 'ton.adresse@gmail.com'
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILED Job C Archive: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Archivage echoue. URL : ${env.BUILD_URL}console",
+                to: 'ton.adresse@gmail.com',
+                attachLog: true
+            )
+        }
+    }
+}
