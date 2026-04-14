@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+    tools { maven 'Maven3'; jdk 'JDK17' }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Rebuild pour qualite') {
+            steps {
+                bat 'mvn clean verify -B'
+            }
+        }
+
+        stage('Couverture JaCoCo') {
+            steps {
+                bat 'mvn jacoco:report -B'
+            }
+            post {
+                always {
+                    jacoco(
+                        execPattern:         '**/target/jacoco.exec',
+                        classPattern:        '**/target/classes',
+                        sourcePattern:       '**/src/main/java',
+                        minimumLineCoverage: '70'
+                    )
+                }
+            }
+        }
+
+        stage('Analyse qualite') {
+            steps {
+                bat 'mvn checkstyle:checkstyle pmd:pmd pmd:cpd spotbugs:spotbugs -B'
+            }
+            post {
+                always {
+                    recordIssues(
+                        enabledForFailure: true,
+                        tools: [
+                            checkStyle(pattern: '**/checkstyle-result.xml'),
+                            pmdParser(pattern:  '**/pmd.xml'),
+                            cpd(pattern:        '**/cpd.xml'),
+                            spotBugs(pattern:   '**/spotbugsXml.xml')
+                        ],
+                        qualityGates: [[threshold: 10, type: 'TOTAL', unstable: true]]
+                    )
+                }
+            }
+        }
+
+    }
+
+    post {
+        always {
+            echo "Job B termine -- ${currentBuild.currentResult}"
+        }
+        failure {
+            emailext(
+                subject: "FAILED Job B Qualite: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Analyse qualite echouee. URL : ${env.BUILD_URL}console",
+                to: 'ton.adresse@gmail.com',
+                attachLog: true
+            )
+        }
+    }
+}
+
